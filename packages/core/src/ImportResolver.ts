@@ -2,8 +2,6 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { Options } from './Options';
 import { SourceCache } from './SourceCache';
 import { Uri } from 'monaco-editor/esm/vs/editor/editor.api';
-import { DummySourceCache } from './DummySourceCache';
-import { UnpkgSourceResolver } from './UnpkgSourceResolver';
 import { DependencyParser } from './DependencyParser';
 import {
   ImportResourcePath,
@@ -90,7 +88,8 @@ export class ImportResolver {
     const { source, at } = await this.loadSourceFileContents(importResource);
     this.createModel(
       source,
-      Uri.parse(this.options.fileRootPath + path.join(`node_modules/${importResource.packageName}`, at))
+      this.options.fileRootPath + path.join(`node_modules/${importResource.packageName}`, at),
+      importResource.packageName
     );
     await this.resolveImportsInFile(
       source,
@@ -132,7 +131,8 @@ export class ImportResolver {
         const typings = pkg.typings || pkg.types;
         this.createModel(
           pkgJson,
-          Uri.parse(`${this.options.fileRootPath}node_modules/${importResource.packageName}/package.json`)
+          `${this.options.fileRootPath}node_modules/${importResource.packageName}/package.json`,
+          importResource.packageName
         );
         invokeUpdate(
           {
@@ -163,7 +163,8 @@ export class ImportResolver {
             const typings = pkg.typings || pkg.types;
             this.createModel(
               pkgJsonTypings,
-              Uri.parse(`${this.options.fileRootPath}node_modules/${typingPackageName}/package.json`)
+              `${this.options.fileRootPath}node_modules/${typingPackageName}/package.json`,
+              typingPackageName
             );
             invokeUpdate(
               {
@@ -272,8 +273,15 @@ export class ImportResolver {
     });
   }
 
-  private createModel(source: string, uri: Uri) {
+  private createModel(source: string, libUri: string, packageName: string) {
+    let uri = Uri.parse(libUri);
     uri = uri.with({ path: uri.path.replace('@types/', '') });
+    if (packageName.startsWith('@'))
+      monaco.languages.typescript.javascriptDefaults.addExtraLib(
+        `declare module '${packageName}' { ${source} }`,
+        libUri
+      );
+
     monaco.editor.createModel(source, 'typescript', uri);
     this.newImportsResolved = true;
   }

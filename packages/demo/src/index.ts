@@ -5,7 +5,7 @@ import { editorContents } from './editorContents';
 import './style.css';
 
 const editor = monaco.editor.create(document.getElementById('editor-mountpoint')!, {
-  model: monaco.editor.createModel(editorContents, 'typescript' /*Uri.parse('file://root/index.ts')*/),
+  model: monaco.editor.createModel(editorContents, 'javascript' /*Uri.parse('file://root/index.ts')*/),
 });
 
 const cache = new LocalStorageCache();
@@ -25,7 +25,7 @@ AutoTypings.create(editor, {
 
   // Log errors to a div console
   onError: e => {
-    const mountPoint = document.getElementById('logs-mountpoint')!;
+    const mountPoint = document.getElementById('errors-mountpoint')!;
     const log = document.createElement('div');
     log.classList.add('err');
     log.innerHTML = e;
